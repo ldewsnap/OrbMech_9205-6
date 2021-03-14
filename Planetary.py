@@ -1,5 +1,18 @@
 import numpy as np
 
+#### Define useful constants
+
+# All units are AU, days, and solar masses unless otherwise specified.
+G = 0.01720209895**2
+obl_earth = 23.439291111111*np.pi/180 # Earth obliquity
+# Constants for magnitudes:
+A1 = 3.33
+B1 = 0.63
+A2 = 1.87
+B2 = 1.22
+G_phot = 0.15
+
+
 #### Function and class definitions
 
 class Orbit:
@@ -18,7 +31,7 @@ class Orbit:
 		T -- orbital period, in days
 		TJ -- Jupiter Tisserand parameter
 	"""
-	def __init__(self, a, e, i, anode, argper, mu, deg=False):
+	def __init__(self, a, e, i, anode, argper, mu=G, epoch=None, M_epoch=None, deg=False):
 		self.a = a
 		self.e = e
 		self.i = i*np.pi/180 if deg else i
@@ -27,6 +40,9 @@ class Orbit:
 		self.mu = mu
 		self.T = 2*np.pi*np.sqrt((self.a**3)/self.mu)
 		self.TJ = (5.20336301/self.a) + 2*np.cos(self.i)*np.sqrt((1 - self.e**2)*self.a/5.20336301)
+		self.epoch = epoch
+		self.M_epoch = M_epoch*np.pi/180 if deg else M_epoch
+		self.totalmass = (mu/G) # Total mass of orbiting body and parent, in M_sol
 
 	def printElems(self, deg=False):
 		"""
@@ -120,7 +136,7 @@ class Orbit:
 		R, V = self.rotate(*self.shape2coords(f))
 		return R, V
 
-	def trueAnomaly(self, JD, epoch, M_epoch, deg=False):
+	def trueAnomaly(self, JD, epoch=None, M_epoch=None, deg=False):
 		"""
 		Given a Julian Date, and an epoch date and the mean anomaly at the epoch, return true anomaly at the date.
 		Inputs:
@@ -132,6 +148,18 @@ class Orbit:
 		Output:
 			f -- true anomaly in radians
 		"""
+		if (not epoch) & (not self.epoch):
+			print('Error in Orbit.trueAnomaly(): no epoch given')
+			return None
+		elif (not epoch):
+			epoch = self.epoch
+
+		if (not M_epoch) & (not self.M_epoch):
+			print('Error in Orbit.trueAnomaly(): no M at epoch given')
+			return None
+		elif (not M_epoch):
+			M_epoch = self.M_epoch
+
 		if deg: M_epoch = M_epoch*np.pi/180
 		n = 2*np.pi/self.T
 		M = (M_epoch + n*(JD - epoch))
@@ -139,7 +167,7 @@ class Orbit:
 		f = E2f(E, self.e)
 		return f
 
-	def predictObs(self, JD, H, G_phot, epoch, M_epoch, deg=False):
+	def predictObs(self, JD, H, G_phot, epoch=None, M_epoch=None, deg=False):
 		"""
 		Given a date, an absolute magnitude, an epoch with mean anomaly at that epoch, and photometric G parameter, return an Observation object describing the body as seen on that date. Can accept degrees or radians.
 		Inputs:
@@ -153,6 +181,18 @@ class Orbit:
 		Output:
 			obs -- an Observation object of the body at JD
 		"""
+		if (not epoch) & (not self.epoch):
+			print('Error in Orbit.predictObs(): no epoch given')
+			return None
+		elif (not epoch):
+			epoch = self.epoch
+
+		if (not M_epoch) & (not self.M_epoch):
+			print('Error in Orbit.predictObs(): no M at epoch given')
+			return None
+		elif (not M_epoch):
+			M_epoch = self.M_epoch
+
 		R = Rvector(JD)
 		f = self.trueAnomaly(JD, epoch, M_epoch, deg=deg)
 		r_obj = self.elems2coords(f)[0]
@@ -162,7 +202,7 @@ class Orbit:
 		obs = Observation(JD, RA, dec, mag, deg=False)
 		return obs
 
-	def generateEphemeris(self, dates, H, G_phot, epoch, M_epoch, deg=False):
+	def generateEphemeris(self, dates, H, G_phot, epoch=None, M_epoch=None, deg=False):
 		"""
 		Given an array of dates, an absolute magnitude and a photometric G parameter, and an epoch and a mean anomaly at that epoch, return an array of observations for each date. 
 		Inputs:
@@ -176,6 +216,18 @@ class Orbit:
 		Output:
 			ephemeris -- a numpy array of Observation objects, one for each entry in dates.
 		"""
+		if (not epoch) & (not self.epoch):
+			print('Error in Orbit.generateEphemeris(): no epoch given')
+			return None
+		elif (not epoch):
+			epoch = self.epoch
+
+		if (not M_epoch) & (not self.M_epoch):
+			print('Error in Orbit.generateEphemeris(): no M at epoch given')
+			return None
+		elif (not M_epoch):
+			M_epoch = self.M_epoch
+
 		ephemeris = np.zeros_like(dates).tolist() # Needs tolist or it won't accept Observation class
 		for i,JD in enumerate(dates):
 			ephemeris[i] = self.predictObs(JD, H, G_phot, epoch, M_epoch, deg=deg)
@@ -322,7 +374,7 @@ def Rvector(JD):
 	Output:
 		R -- numpy vector; Earth->Sun vector in ecliptic Cartesian coordinates. In AU.
 	"""
-	f = Earth.trueAnomaly(JD, epoch=epoch, M_epoch=100.46435-102.94719, deg=True)
+	f = Earth.trueAnomaly(JD)
 	R = -Earth.elems2coords(f)[0]
 	return R
 
@@ -479,7 +531,8 @@ def Gauss(obs1, obs2, obs3):
 	orbit2_3, f2 = orbElems(r2, v2_3, G)
 	orbits = [orbit1_2, orbit1_3, orbit2_3]
 
-	mean_orbit = Orbit(*np.mean([orbit1_2.elems(), orbit1_3.elems(), orbit2_3.elems()], axis=0), G)
+	mean_orbit = Orbit(*np.mean([orbit1_2.elems(), orbit1_3.elems(), orbit2_3.elems()], axis=0), epoch=obs2.JD)
+	mean_orbit.M_epoch = E2M(f2E(f2, mean_orbit.e), mean_orbit.e)
 	mean_orbit.d_a = spread(orbit1_2.a, orbit1_3.a, orbit2_3.a)
 	mean_orbit.d_e = spread(orbit1_2.e, orbit1_3.e, orbit2_3.e)
 	mean_orbit.d_i = spread(orbit1_2.i, orbit1_3.i, orbit2_3.i)
@@ -585,29 +638,15 @@ def Geod2Cartog(phi, lam, h):
 	return np.array([x,y,z])
 
 
-
-#### Define useful constants and physical parameters
-# All units are AU, days, and solar masses unless otherwise specified.
-G = 0.01720209895**2
-M_earth = 3.0404327497692654e-6
-obl_earth = 23.439291111111*np.pi/180 # Earth obliquity in radians
-# Masses from de Pater & Lissauer, orbits from http://www.met.rdg.ac.uk/~ross/Astronomy/Planets.html
-M_sol = 1.989e33 # grams
-Mercury = Orbit(a=0.38709893, e=0.20563069, i=7.00487*np.pi/180, anode=48.33167*np.pi/180, argper=(77.45645-48.33167)*np.pi/180, mu=G*(1+(3.302e26/M_sol)))
-Venus = Orbit(a=0.72333199, e=0.00677323, i=3.39471*np.pi/180, anode=76.68069*np.pi/180, argper=(131.53298-76.68069)*np.pi/180, mu=G*(1+(4.869e27/M_sol)))
-Earth = Orbit(a=1.00000011, e=0.01671022, i=0.00005*np.pi/180, anode=-11.26064*np.pi/180, argper=(102.94719--11.26064)*np.pi/180, mu=G*(1+M_earth))
-Mars = Orbit(a=1.52366231, e=0.09341233, i=1.85061*np.pi/180, anode=49.57854*np.pi/180, argper=(336.04084-49.57854)*np.pi/180, mu=G*(1+(6.4185e26/M_sol)))
-Jupiter = Orbit(a=5.20336301, e=0.04839266, i=1.30530*np.pi/180, anode=100.55615*np.pi/180, argper=(14.75385-100.55615)*np.pi/180, mu=G*(1+(1.8986e30/M_sol)))
-Saturn = Orbit(a=9.53707032, e=0.05415060, i=2.48446*np.pi/180, anode=113.71504*np.pi/180, argper=(92.43194-113.71504)*np.pi/180, mu=G*(1+(5.6846e29/M_sol)))
-Uranus = Orbit(a=19.19126393, e=0.04716771, i=0.76986*np.pi/180, anode=74.22988*np.pi/180, argper=(170.96424-74.22988)*np.pi/180, mu=G*(1+(8.6832e28/M_sol)))
-Neptune = Orbit(a=30.06896348, e=0.00858587, i=1.76917*np.pi/180, anode=131.72169*np.pi/180, argper=(44.97135-131.72169)*np.pi/180, mu=G*(1+(1.0243e29/M_sol)))
-Pluto = Orbit(a=39.48168677, e=0.24880766, i=17.14175*np.pi/180, anode=110.30347*np.pi/180, argper=(224.06676-110.30347)*np.pi/180, mu=G*(1+(1.303e25/M_sol)))
+# Planet masses as given in 9206 Assn 3, orbits from http://www.met.rdg.ac.uk/~ross/Astronomy/Planets.html
+epoch_planets = 2451545.0 # Epoch of orbital parameters below, in JD.
+Mercury = Orbit(a=0.38709893, e=0.20563069, i=7.00487, anode=48.33167, argper=77.45645-48.33167, mu=G*(1 + 1/6023600.0), epoch=epoch_planets, M_epoch = 252.25084-77.45645, deg=True)
+Venus = Orbit(a=0.72333199, e=0.00677323, i=3.39471, anode=76.68069, argper=131.53298-76.68069, mu=G*(1 + 1/408523.71), epoch=epoch_planets, M_epoch = 181.97973-131.53298, deg=True)
+Earth = Orbit(a=1.00000011, e=0.01671022, i=0.00005, anode=-11.26064, argper=102.94719-(-11.26064), mu=G*(1 + 1/(332946.050895+27068700.387534)), epoch=epoch_planets, M_epoch = 100.46435-102.94719, deg=True)
+Mars = Orbit(a=1.52366231, e=0.09341233, i=1.85061, anode=49.57854, argper=336.04084-49.57854, mu=G*(1 + 1/3098708.0), epoch=epoch_planets, M_epoch = 355.45332-336.04084, deg=True)
+Jupiter = Orbit(a=5.20336301, e=0.04839266, i=1.30530, anode=100.55615, argper=14.75385-100.55615, mu=G*(1 + 1/1047.3486), epoch=epoch_planets, M_epoch = 34.40438-14.75385, deg=True)
+Saturn = Orbit(a=9.53707032, e=0.05415060, i=2.48446, anode=113.71504, argper=92.43194-113.71504, mu=G*(1 + 1/3497.898), epoch=epoch_planets, M_epoch = 49.94432-92.43194, deg=True)
+Uranus = Orbit(a=19.19126393, e=0.04716771, i=0.76986, anode=74.22988, argper=170.96424-74.22988, mu=G*(1 + 1/22902.98), epoch=epoch_planets, M_epoch = 313.23218-170.96424, deg=True)
+Neptune = Orbit(a=30.06896348, e=0.00858587, i=1.76917, anode=131.72169, argper=44.97135-131.72169, mu=G*(1 + 1/19412.24), epoch=epoch_planets, M_epoch = 304.88003-44.97135, deg=True)
+Pluto = Orbit(a=39.48168677, e=0.24880766, i=17.14175, anode=110.30347, argper=224.06676-110.30347, mu=G*(1 + 1/1.352e8), epoch=epoch_planets, M_epoch = 238.92881-224.06676, deg=True)
 Planets = [Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto]
-epoch = 2451545.0 # Epoch of orbital parameters above, in JD.
-
-# Constants for magnitudes:
-A1 = 3.33
-B1 = 0.63
-A2 = 1.87
-B2 = 1.22
-G_phot = 0.15
