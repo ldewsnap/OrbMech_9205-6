@@ -299,6 +299,27 @@ class Observation:
 		z_g = r*np.sin(self.dec)
 		return np.array([x_h,y_h,z_h])
 
+def planetPositions(JD):
+	"""
+	Given a date, returns an array of the mass, position, and velocity of each planet in the solar system.
+	Input:
+		JD -- Julian date
+	Output:
+		results -- Numpy array. One planet per row, in the order given in Planets array.
+			Row structure: [name, M, R, V]
+			name -- planet name as defined in planet's Orbit object
+			M -- Planet mass in units of M_sol
+			R -- heliocentric ecliptic Cartesian position vector of planet at JD
+			V -- heliocentric ecliptic Cartesian velocity vector of planet at JD
+	"""
+	results = np.zeros((len(Planets), 4), dtype=object)
+	for i,planet in enumerate(Planets):
+		f = planet.trueAnomaly(JD)
+		R, V = planet.elems2coords(f)
+		M = planet.totalMass - 1
+		results[i] = planet.name, M, R, V
+	return results
+
 def orbElems(r, v, mu):
 	"""
 	Given a position vector, velocity vector, and system gravitational parameter, returns the six orbital elements.
