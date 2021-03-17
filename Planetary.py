@@ -672,7 +672,7 @@ def Geod2Cartog(phi, lam, h):
 epoch_planets = 2451545.0  # Epoch of orbital parameters below, in JD.
 Mercury = Orbit(a=0.38709893, e=0.20563069, i=7.00487, anode=48.33167, argper=77.45645-48.33167, mu=G*(1 + 1/6023600.0), epoch=epoch_planets, M_epoch = 252.25084-77.45645, deg=True, name='Mercury')
 Venus = Orbit(a=0.72333199, e=0.00677323, i=3.39471, anode=76.68069, argper=131.53298-76.68069, mu=G*(1 + 1/408523.71), epoch=epoch_planets, M_epoch = 181.97973-131.53298, deg=True, name='Venus')
-Earth = Orbit(a=1.00000011, e=0.01671022, i=0.00005, anode=-11.26064, argper=102.94719-(-11.26064), mu=G*(1 + 1/(332946.050895+27068700.387534)), epoch=epoch_planets, M_epoch = 100.46435-102.94719, deg=True, name='Earth') # Includes mass of Moon
+Earth = Orbit(a=1.00000011, e=0.01671022, i=0.00005, anode=-11.26064, argper=102.94719-(-11.26064), mu=G*(1 + (1/332946.050895)+(1/27068700.387534)), epoch=epoch_planets, M_epoch = 100.46435-102.94719, deg=True, name='Earth') # Includes mass of Moon
 Mars = Orbit(a=1.52366231, e=0.09341233, i=1.85061, anode=49.57854, argper=336.04084-49.57854, mu=G*(1 + 1/3098708.0), epoch=epoch_planets, M_epoch = 355.45332-336.04084, deg=True, name='Mars')
 Jupiter = Orbit(a=5.20336301, e=0.04839266, i=1.30530, anode=100.55615, argper=14.75385-100.55615, mu=G*(1 + 1/1047.3486), epoch=epoch_planets, M_epoch = 34.40438-14.75385, deg=True, name='Jupiter')
 Saturn = Orbit(a=9.53707032, e=0.05415060, i=2.48446, anode=113.71504, argper=92.43194-113.71504, mu=G*(1 + 1/3497.898), epoch=epoch_planets, M_epoch = 49.94432-92.43194, deg=True, name='Saturn')
