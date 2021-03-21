@@ -33,7 +33,7 @@ class Orbit:
 	Additional attributes after initialization:
 		T -- orbital period, in days
 		TJ -- Jupiter Tisserand parameter
-		total_Mass -- M+m, mass of orbiting body plus host
+		M -- M+m, mass of orbiting body plus host
 	"""
 	def __init__(self, a, e, i, anode, argper, mu=G, epoch=None, M_epoch=None, deg=False, name=None):
 		self.a = a
@@ -51,7 +51,7 @@ class Orbit:
 			existing = 'epoch' if epoch else 'M_epoch'
 			print('Warning in Orbit.__init__(): must have both epoch and M_epoch, or neither. Discarding '+existing+' input.')
 		self.name = name
-		self.totalMass = (mu/G) # Total mass of orbiting body and parent, in M_sol
+		self.M = (mu/G) # Total mass of orbiting body and parent, in M_sol
 
 	def printElems(self, deg=False):
 		"""
@@ -316,7 +316,7 @@ def planetPositions(JD):
 	for i,planet in enumerate(Planets):
 		f = planet.trueAnomaly(JD)
 		R, V = planet.elems2coords(f)
-		M = planet.totalMass - 1
+		M = planet.M - 1
 		results[i] = planet.name, M, R, V
 	return results
 
