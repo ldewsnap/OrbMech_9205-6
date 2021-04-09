@@ -47,7 +47,7 @@ class Orbit:
 		if (epoch is not None) and (M_epoch is not None):
 			self.epoch = epoch
 			self.M_epoch = M_epoch*np.pi/180 if deg else M_epoch
-		elif (epoch is None) or (M_epoch is None):
+		elif (epoch is None) ^ (M_epoch is None):
 			existing = 'epoch' if (epoch is not None) else 'M_epoch'
 			print('Warning in Orbit.__init__(): must have both epoch and M_epoch, or neither. Discarding '+existing+' input.')
 		self.name = name
@@ -84,7 +84,7 @@ class Orbit:
 		Optional input:
 			deg -- output is in degrees if True, else in radians. Default is False
 		"""
-		if deg is not None:
+		if deg:
 			elements = [self.a, self.e, self.i*180/np.pi, self.anode*180/np.pi, self.argper*180/np.pi]
 		else:
 			elements = [self.a, self.e, self.i, self.anode, self.argper]
