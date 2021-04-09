@@ -320,7 +320,7 @@ def planetPositions(JD):
 		results[i] = planet.name, M, R, V
 	return results
 
-def orbElems(r, v, mu):
+def coords2orbit(r, v, mu):
 	"""
 	Given a position vector, velocity vector, and system gravitational parameter, returns the six orbital elements.
 	Not designed to handle unbound orbits.
@@ -556,9 +556,9 @@ def Gauss(obs1, obs2, obs3):
 	v1_2 = velocity(obs1, obs2, r1, r2)
 	v1_3 = velocity(obs1, obs3, r1, r3)
 	v2_3 = velocity(obs2, obs3, r2, r3)
-	orbit1_2,_ = orbElems(r1, v1_2, G)
-	orbit1_3,_ = orbElems(r1, v1_3, G)
-	orbit2_3, f2 = orbElems(r2, v2_3, G)
+	orbit1_2,_ = coords2orbit(r1, v1_2, G)
+	orbit1_3,_ = coords2orbit(r1, v1_3, G)
+	orbit2_3, f2 = coords2orbit(r2, v2_3, G)
 	orbits = [orbit1_2, orbit1_3, orbit2_3]
 
 	mean_orbit = Orbit(*np.mean([orbit1_2.elems(), orbit1_3.elems(), orbit2_3.elems()], axis=0), epoch=obs2.JD)
