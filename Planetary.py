@@ -44,11 +44,11 @@ class Orbit:
 		self.mu = mu
 		self.T = 2*np.pi*np.sqrt((self.a**3)/self.mu)
 		self.TJ = (5.20336301/self.a) + 2*np.cos(self.i)*np.sqrt((1 - self.e**2)*self.a/5.20336301)
-		if epoch and M_epoch:
+		if (epoch is not None) and (M_epoch is not None):
 			self.epoch = epoch
 			self.M_epoch = M_epoch*np.pi/180 if deg else M_epoch
-		elif (epoch or M_epoch):
-			existing = 'epoch' if epoch else 'M_epoch'
+		elif (epoch is None) or (M_epoch is None):
+			existing = 'epoch' if (epoch is not None) else 'M_epoch'
 			print('Warning in Orbit.__init__(): must have both epoch and M_epoch, or neither. Discarding '+existing+' input.')
 		self.name = name
 		self.M = (mu/G) # Total mass of orbiting body and parent, in M_sol
@@ -84,7 +84,7 @@ class Orbit:
 		Optional input:
 			deg -- output is in degrees if True, else in radians. Default is False
 		"""
-		if deg:
+		if deg is not None:
 			elements = [self.a, self.e, self.i*180/np.pi, self.anode*180/np.pi, self.argper*180/np.pi]
 		else:
 			elements = [self.a, self.e, self.i, self.anode, self.argper]
@@ -157,16 +157,16 @@ class Orbit:
 		Output:
 			f -- true anomaly in radians
 		"""
-		if (not epoch) & (not self.epoch):
+		if (epoch is None) & (self.epoch is None):
 			print('Error in Orbit.trueAnomaly(): no epoch given')
 			return None
-		elif (not epoch):
+		elif (epoch is None):
 			epoch = self.epoch
 
-		if (not M_epoch) & (not self.M_epoch):
+		if (M_epoch is None) & (self.M_epoch is None):
 			print('Error in Orbit.trueAnomaly(): no M at epoch given')
 			return None
-		elif (not M_epoch):
+		elif (M_epoch is None):
 			M_epoch = self.M_epoch
 
 		if deg: M_epoch = M_epoch*np.pi/180
@@ -190,16 +190,16 @@ class Orbit:
 		Output:
 			obs -- an Observation object of the body at JD
 		"""
-		if (not epoch) & (not self.epoch):
+		if (epoch is None) & (self.epoch is None):
 			print('Error in Orbit.predictObs(): no epoch given')
 			return None
-		elif (not epoch):
+		elif (epoch is None):
 			epoch = self.epoch
 
-		if (not M_epoch) & (not self.M_epoch):
+		if (M_epoch is None) & (self.M_epoch is None):
 			print('Error in Orbit.predictObs(): no M at epoch given')
 			return None
-		elif (not M_epoch):
+		elif (M_epoch is None):
 			M_epoch = self.M_epoch
 
 		R = Rvector(JD)
@@ -225,16 +225,16 @@ class Orbit:
 		Output:
 			ephemeris -- a numpy array of Observation objects, one for each entry in dates.
 		"""
-		if (not epoch) & (not self.epoch):
+		if (epoch is None) & (self.epoch is None):
 			print('Error in Orbit.generateEphemeris(): no epoch given')
 			return None
-		elif (not epoch):
+		elif (epoch is None):
 			epoch = self.epoch
 
-		if (not M_epoch) & (not self.M_epoch):
+		if (M_epoch is None) & (self.M_epoch is None):
 			print('Error in Orbit.generateEphemeris(): no M at epoch given')
 			return None
-		elif (not M_epoch):
+		elif (M_epoch is None):
 			M_epoch = self.M_epoch
 
 		ephemeris = np.zeros_like(dates).tolist() # Needs tolist or it won't accept Observation class
