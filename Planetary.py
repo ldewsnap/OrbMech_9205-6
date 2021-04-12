@@ -464,6 +464,24 @@ def E2M(E, e):
 	"""
 	return E - e*np.sin(E)
 
+def f2M(f, e):
+	"""
+	Given true anomaly and eccentricity, return mean anomaly.
+	Anomalies given in radians.
+	"""
+	E = f2E(f, e)
+	M = E2M(E, e)
+	return M
+
+def M2f(M, e):
+	"""
+	Given mean anomaly and eccentricity, return true anomaly.
+	Anomalies given in radians.
+	"""
+	E = M2E(M, e)
+	f = E2f(E, e)
+	return f
+
 ## Orbit determination
 def position(obs1, obs2, obs3):
 	"""
